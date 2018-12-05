@@ -1,10 +1,9 @@
 import React from 'react';
-import { StyleSheet, Text, Dimensions, Platform } from 'react-native';
-import { init } from '@livechat/livechat-visitor-sdk';
-import { View } from 'react-native-animatable';
+import { StyleSheet, Text, Dimensions, Platform, View, ScrollView, Keyboard } from 'react-native';
 import PropTypes from 'prop-types';
-import { GiftedChat } from 'react-native-gifted-chat';
+import { GiftedChat, Message, InputToolbar } from 'react-native-gifted-chat';
 import NavigationBar from './NavigationBar/NavigationBar';
+import { init } from '@livechat/livechat-visitor-sdk';
 
 const { height, width } = Dimensions.get('window');
 const totalSize = num => (Math.sqrt((height * height) + (width * width)) * num) / 100;
@@ -16,6 +15,7 @@ export default class Chat extends React.Component {
       messages: [],
       onlineStatus: false,
       typingText: null,
+      isTyping: false,
       users: {
         system: {
           name: 'system',
@@ -64,6 +64,7 @@ export default class Chat extends React.Component {
   };
 
   handleStateChange = (statusData) => {
+    console.log("state changed", statusData)
     this.setState({
       onlineStatus: statusData.status === 'online',
     });
@@ -76,7 +77,7 @@ export default class Chat extends React.Component {
   handleChatEnded = () => {
     this.setState({
       messages: [{
-        text: 'Chat is closed',
+        text: 'Sohbet kapalı',
         _id: String(Math.random()),
         createdAt: Date.now(),
         user: {
@@ -94,9 +95,8 @@ export default class Chat extends React.Component {
   };
 
   handleTypingIndicator = (typingData) => {
-    this.setState({
-      typingText: typingData.isTyping ? 'Agent is typing...' : null,
-    });
+    console.log("typing", typingData)
+    this.setState({ isTyping: typingData.isTyping })
   };
 
   addUser = (newUser, type) => {
@@ -113,45 +113,44 @@ export default class Chat extends React.Component {
   };
 
   closeChat = () => {
-    this.chat.lightSpeedOut(500).then(() => {
-      this.props.closeChat();
-    });
+    this.props.closeChat();
   };
 
   renderFooter = () => {
-    if (this.state.typingText) {
+    if (this.state.isTyping)
       return (
-        <View style={styles.footerContainer}>
-          <Text style={styles.footerText}>
-            {this.state.typingText}
-          </Text>
+        <View style={{ marginBottom: 10, marginTop: 10, paddingRight: 15, width, flexDirection: 'row', justifyContent: 'flex-end' }}>
+          <Text style={{ color: '#cecece', fontFamily: 'Poppins' }} >Pencere Destek yazıyor...</Text>
         </View>
       );
-    }
-    return null;
+    else return null
   };
 
   render() {
     if (this.props.isChatOn) {
+      console.log("render chat", this.state)
       return (
-        <View
-          animation="lightSpeedIn"
-          style={styles.container}
+        <ScrollView
+          scrollEnabled={false}
+          contentContainerStyle={[styles.container, this.props.containerStyle]}
           ref={(ref) => { this.chat = ref; }}
         >
-          <NavigationBar chatTitle={this.props.chatTitle} closeChat={this.closeChat} />
-          <Text style={styles.status}>
-            { this.state.onlineStatus ? this.props.greeting : this.props.noAgents }
+          {/* <NavigationBar chatTitle={this.props.chatTitle} closeChat={this.closeChat} /> */}
+          <Text style={{position: 'absolute', backgroundColor:'white', alignSelf:'center', fontFamily: 'Poppins', color: '#cecece', flex: 1, textAlign: 'center', marginTop: 10}} onPress={() => Keyboard.dismiss()}>
+            {this.state.onlineStatus ? this.props.greeting : this.props.noAgents}
           </Text>
           <GiftedChat
             messages={this.state.messages}
-            renderFooter={this.renderFooter}
             onSend={this.handleSend}
             onInputTextChanged={this.handleInputTextChange}
             user={this.getVisitor()}
+            renderInputToolbar={(props) =>
+                <InputToolbar {...props} style={{ marginBottom: 500 }} />
+            }
+            renderFooter={this.renderFooter}
             {...this.props}
           />
-        </View>
+        </ScrollView>
       );
     }
     return null;
@@ -175,9 +174,8 @@ const styles = StyleSheet.create({
   },
   container: {
     width,
-    height: Platform.OS === 'ios' ? height : height - height / 25,
-    position: 'absolute',
     flexDirection: 'column',
+    flex: 1,
     backgroundColor: '#fff',
   },
   navigation: {
@@ -198,10 +196,11 @@ const styles = StyleSheet.create({
     color: '#aaa',
   },
   status: {
+    fontFamily: 'Poppins',
     textAlign: 'center',
-    fontSize: totalSize(2.1),
+    fontSize: totalSize(1.8),
     fontWeight: '500',
-    color: '#444',
+    color: 'gray',
     padding: 5,
   },
 });

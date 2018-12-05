@@ -30,6 +30,15 @@ export default class LiveChat extends Component {
     props.onLoaded(GLOBAL.visitorSDK);
   }
 
+  initSdk = (license, group) => {
+    if (!GLOBAL.visitorSDK) {
+      GLOBAL.visitorSDK = init({
+        license,
+        group
+      });
+    }
+  }
+
   defineStyles() {
     this.styles = StyleSheet.create({
       bubbleStyle: {
